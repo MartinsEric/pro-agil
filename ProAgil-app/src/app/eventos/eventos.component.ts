@@ -2,6 +2,10 @@ import { Component, OnInit, TemplateRef } from '@angular/core';
 import { EventoService } from '../_services/evento.service';
 import { Evento } from '../_models/Evento';
 import { BsModalRef, BsModalService } from 'ngx-bootstrap';
+import { FormGroup, FormBuilder ,Validators } from '@angular/forms';
+import { defineLocale, BsLocaleService, ptBrLocale } from 'ngx-bootstrap';
+
+defineLocale('pt-br', ptBrLocale);
 
 @Component({
   selector: 'app-eventos',
@@ -16,6 +20,7 @@ export class EventosComponent implements OnInit {
   imagemMargem = 2;
   mostarImagem = false;
   modalRef: BsModalRef;
+  registerForm: FormGroup;
 
   _filtroLista = '';
 
@@ -30,14 +35,19 @@ export class EventosComponent implements OnInit {
 
   constructor(
     private eventoService: EventoService,
-    private modalService: BsModalService
-    ) { }
+    private modalService: BsModalService,
+    private fb: FormBuilder,
+    private localeService: BsLocaleService
+    ) { 
+      this.localeService.use('pt-br');
+    }
 
   openModal(template: TemplateRef<any>) {
     this.modalRef = this. modalService.show(template);
   }
 
   ngOnInit() {
+    this.validation();
     this.getEventos();
   }
 
@@ -49,6 +59,22 @@ export class EventosComponent implements OnInit {
   }
   alternarImagem(){
     this.mostarImagem = !this.mostarImagem;
+  }
+
+  salvarAlteracao() {
+
+  }
+
+  validation() {
+    this.registerForm = this.fb.group({
+      tema: ['', [Validators.required, Validators.minLength(4), Validators.maxLength(50)]],
+      local: ['', [Validators.required]],
+      date: ['', [Validators.required]],
+      qtdPessoas: ['', [Validators.required, Validators.max(120000)]],
+      imageUrl: ['', [Validators.required]],
+      telefone: ['', [Validators.required]],
+      email: ['', [Validators.required, Validators.email]]
+    });
   }
 
   getEventos() {
