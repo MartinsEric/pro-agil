@@ -4,6 +4,7 @@ import { Evento } from '../_models/Evento';
 import { BsModalRef, BsModalService } from 'ngx-bootstrap';
 import { FormGroup, FormBuilder ,Validators } from '@angular/forms';
 import { defineLocale, BsLocaleService, ptBrLocale } from 'ngx-bootstrap';
+import { temporaryAllocator } from '@angular/compiler/src/render3/view/util';
 
 defineLocale('pt-br', ptBrLocale);
 
@@ -13,16 +14,24 @@ defineLocale('pt-br', ptBrLocale);
   styleUrls: ['./eventos.component.css']
 })
 export class EventosComponent implements OnInit {
-  
   eventosFiltrados: Evento[];
   eventos: Evento[];
+  evento: Evento;
   imagemLargura = 50;
   imagemMargem = 2;
   mostarImagem = false;
-  modalRef: BsModalRef;
   registerForm: FormGroup;
-
+  modoSalvar = 'post';
   _filtroLista = '';
+
+  constructor(
+    private eventoService: EventoService,
+    private modalService: BsModalService,
+    private fb: FormBuilder,
+    private localeService: BsLocaleService
+    ) {
+      this.localeService.use('pt-br');
+    }
 
   get filtroLista(): string{
     return this._filtroLista;
@@ -33,17 +42,10 @@ export class EventosComponent implements OnInit {
     this.eventosFiltrados = this.filtroLista ? this.filtrarEventos(this.filtroLista) : this.eventos;
   }
 
-  constructor(
-    private eventoService: EventoService,
-    private modalService: BsModalService,
-    private fb: FormBuilder,
-    private localeService: BsLocaleService
-    ) { 
-      this.localeService.use('pt-br');
-    }
 
-  openModal(template: TemplateRef<any>) {
-    this.modalRef = this. modalService.show(template);
+  openModal(template: any) {
+    this.registerForm.reset();
+    template.show();
   }
 
   ngOnInit() {
@@ -51,7 +53,7 @@ export class EventosComponent implements OnInit {
     this.getEventos();
   }
 
-  filtrarEventos(filtrarPor: string): Evento[]{
+  filtrarEventos(filtrarPor: string): Evento[] {
     filtrarPor = filtrarPor.toLocaleLowerCase();
     return this.eventos.filter(
       evento => evento.tema.toLocaleLowerCase().indexOf(filtrarPor) !== -1
@@ -61,8 +63,42 @@ export class EventosComponent implements OnInit {
     this.mostarImagem = !this.mostarImagem;
   }
 
-  salvarAlteracao() {
+  salvarAlteracao(template: any) {
+    if (this.registerForm.valid) {
+      if(this.modoSalvar === 'post'){
+        this.evento = Object.assign({}, this.registerForm.value);
+        this.eventoService.postEvento(this.evento).subscribe(
+          (novoEvento: Evento) => {
+            console.log(novoEvento);
+            template.hide();
+            this.getEventos();
+        }, error => {
+          console.log(error);
+        });
+      } else {
+        this.evento = Object.assign({id: this.evento.id}, this.registerForm.value);
+        this.eventoService.putEvento(this.evento).subscribe(
+          () => {
+            template.hide();
+            this.getEventos();
+        }, error => {
+          console.log(error);
+        });
+      }
+    }
+  }
 
+  editarEvento(evento: Evento, template: any){
+    this.modoSalvar = 'put';
+    this.openModal(template);
+    this.evento = evento;
+    this.registerForm.patchValue(evento);
+
+  }
+
+  novoEvento(template: any){
+    this.modoSalvar = 'post';
+    this.openModal(template);
   }
 
   validation() {
@@ -81,7 +117,7 @@ export class EventosComponent implements OnInit {
     this.eventoService.getAllEvento().subscribe(
       (_eventos: Evento[]) => {
       this.eventos = _eventos;
-      console.log(_eventos);
+      console.log(this.eventos);
       }, error => {
         console.log(error);
       });
