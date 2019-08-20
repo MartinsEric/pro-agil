@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Evento } from '../_models/Evento';
+import { TabHeadingDirective } from 'ngx-bootstrap';
 
 @Injectable({
   providedIn: 'root'
@@ -27,5 +28,9 @@ export class EventoService {
 
   putEvento(evento: Evento) {
     return this.http.put(`${this.baseURL}/${evento.id}/`, evento);
+  }
+
+  deleteEvento(id: number){
+    return this.http.delete(`${this.baseURL}/${id}/`);
   }
 }
